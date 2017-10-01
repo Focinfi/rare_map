@@ -19,14 +19,16 @@ module RareMap
           pk = line.match(/(:primary_key\s*=>|primary_key:)\s*['"](.+)['"]/)
           primary_key = pk[2] if pk
           tables << Table.new(name, :id => id, :primary_key => primary_key)
+        when /^t\.index/
+          unique_column_math = line.match(/t\.index\s+.*\[\s*['"]([^'"]+)['"]\s*\].*(:unique\s*=>|unique:)\s*true/)
+          next if !unique_column_math || unique_column_math.size < 2
+          unique_column = unique_column_math[1] 
+          column = tables.last.columns.find { |col| col.name == unique_column }
+          column.unique = true
         when /^t\./
           name = line.match(/t\.\w+\s+['"]([^'"]+)['"]/)[1]
           type = line.match(/t\.(\w+)\s+/)[1]
           tables.last.columns << Column.new(name, type)
-        when /^add_index\s+.*\[\s*['"]([^'"]+)['"]\s*\].*(:unique\s*=>|unique:)\s*true/
-          unique_column = line.match(/add_index\s+.*\[\s*['"]([^'"]+)['"]\s*\].*(:unique\s*=>|unique:)\s*true/)[1]
-          column = tables.last.columns.find { |col| col.name == unique_column }
-          column.unique = true
         end
       end
       
